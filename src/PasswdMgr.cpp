@@ -82,8 +82,71 @@ bool PasswdMgr::checkPasswd(const char *name, const char *passwd) {
 
 bool PasswdMgr::changePasswd(const char *name, const char *passwd) {
 
-   // Insert your insane code here
+   //TODO: Insert your insane code here. There is no clean way to modify a specific line of a file
+   int edit  = 0; // variable to determine when user is found and edit the next line
+   std::vector<std::string> data;
+   std::string user = name; // change username to string for c++ comparison
 
+   // checks if the user is in the database and if it is, checks the password, (0 trust)
+   if(!checkPasswd(name, passwd)) // user not found/invalide password
+   {
+	std::cout << "Invalid username/password to change" << std::endl;
+	return false;
+   }
+   else
+   {
+	   // read in each line of the password file, adding each to string (file I/O is expensive)
+	   std::ifstream oldFile(login.txt, std::ifstream::in);
+	   std::string aLine;
+	   if(myFile.is_open())
+	   {
+		while(std::getline(myFile, aLine)
+		{
+			//compare the line to username 
+			if(name.compare(aLine) == 0)
+			{
+				edit = 1; 
+			}
+			else if(edit == 1) // this is the line that needs to be overwritten
+			{
+				edit == 0; 
+				aLine.assign(passwd); // overwrites the old line (does a '\n' needs to be added?)
+			}
+			// add the line to data to be written to the file later
+			data.emplace_back(aLine); 
+		}
+		// close oldFile stream for cleaner code 
+		oldfile.close();
+	   }
+	   else //where it goes if the file fails to open
+	   {
+		perror("Failed to open");
+		return false; // return false because failed
+	   }
+	   // now to write back to file
+	   std::ofstream updateFile(login.txt); // opens up login.txt (all data is erased so need to rewrite everything)
+	   if(updateFile.is_open())
+	   {
+		while(!data.empty())
+		{
+			updateFile << data.front(); // << std::endl; <- is the new line needed?
+			data.erase(data.begin()); // removes the first element
+		}
+		// all information in data has been transferred. Close the stream
+		updateFile.close();
+	   }
+	   else
+	   {
+		 perror("Failed to open for writing");
+		 return false; // return false because failed
+	   }
+	   
+	   // when username is found, read in the next line (password line) and edit it to new password
+	   // read through the rest of the file and add it to string
+	   // put string back in file 
+	   //
+   }
+   
    return true;
 }
 

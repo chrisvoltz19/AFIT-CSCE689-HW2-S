@@ -1,0 +1,49 @@
+Questions:
+1) do we need to make whitelist? is a .txt acceptable? do you care where we store it? (question valid for all files)
+2) What code do we need to add to run properly?
+3) Server needs to pass whitelist as well correct?
+4) Can we assume there is enough memory to put whole file into string or do we need to do a temp file approach?
+5) login info stored in: login.txt   (?)
+
+Tasks: 
+- IP Whitelist
+	- read in value and compare until read all or match
+	- if valid continue, else exit  (no error messgage?)
+- Username
+	- read list of usernames and compare, invalid quit immediately
+	- 2 attempts for password if valid username
+- Password
+	- use Argon2 (32 bytes)
+	- add unique 16-byte salt for each user
+	- pepper (optional)
+	- change password by entering new password twice 
+- adduser_main.cpp
+	- don't touch (needs to be able to work with unmodified)
+- events: log below events to server.log with time/date (to the second)
+	- server statup
+	- new connections on whitelist (IP)
+	- new connections not on whitelist (IP)
+	- recognized usernames (username and IP)
+	- unrecognized usernames (username and IP)
+	- users that twice failed to enter password (username, IP)
+	- Successful login (username, IP)
+	- disconnect(username, IP)
+
+Main files to edit:
+- TCPClient.cpp (maybe figure out where whitelist confirmation is)
+- TCPServer.cpp (maybe do servers have to be verified against whitelist?)
+- PasswdMgr.cpp
+
+
+Hashing process: 
+1) password is set by command line
+2) password is hashed, salted, and (optionally) peppered)
+3) password is stored in random file
+4) user enters password which goes through same process and then is compared to hash
+
+Misc Notes:
+- password file format is (each is stored on a newline):
+username
+password
+salt
+- if going the tmp file way, use the mv command to rename (with hardcoded string so it is as secure as possible)
