@@ -4,6 +4,7 @@ Questions:
 3) Server needs to pass whitelist as well correct?
 4) Can we assume there is enough memory to put whole file into string or do we need to do a temp file approach?
 5) login info stored in: login.txt   (?)
+6) what are we supposed to be putting in for code in hashArgon2
 
 Tasks: 
 - IP Whitelist

@@ -266,5 +266,9 @@ void PasswdMgr::hashArgon2(std::vector<uint8_t> &ret_hash, std::vector<uint8_t> 
 
 void PasswdMgr::addUser(const char *name, const char *passwd) {
    // Add those users!
+   // check file and see if user is already there
+   // if not create salt to be added 
+   // open up file to append and put new user at the end
+   //
 }
 
