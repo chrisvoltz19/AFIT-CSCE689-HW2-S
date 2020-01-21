@@ -8,6 +8,8 @@
 #include "PasswdMgr.h"
 #include "FileDesc.h"
 #include "strfuncts.h"
+// My includes
+#include <fstream>
 
 const int hashlen = 32;
 const int saltlen = 16;
@@ -96,14 +98,15 @@ bool PasswdMgr::changePasswd(const char *name, const char *passwd) {
    else
    {
 	   // read in each line of the password file, adding each to string (file I/O is expensive)
-	   std::ifstream oldFile(login.txt, std::ifstream::in);
+	   std::ifstream oldFile("login.txt", std::ifstream::in);
+	   oldFile.open("login.txt");
 	   std::string aLine;
-	   if(myFile.is_open())
+	   if(oldFile.is_open())
 	   {
-		while(std::getline(myFile, aLine)
+		while(std::getline(oldFile, aLine))
 		{
 			//compare the line to username 
-			if(name.compare(aLine) == 0)
+			if(user.compare(aLine) == 0)
 			{
 				edit = 1; 
 			}
@@ -116,7 +119,7 @@ bool PasswdMgr::changePasswd(const char *name, const char *passwd) {
 			data.emplace_back(aLine); 
 		}
 		// close oldFile stream for cleaner code 
-		oldfile.close();
+		oldFile.close();
 	   }
 	   else //where it goes if the file fails to open
 	   {
@@ -124,7 +127,7 @@ bool PasswdMgr::changePasswd(const char *name, const char *passwd) {
 		return false; // return false because failed
 	   }
 	   // now to write back to file
-	   std::ofstream updateFile(login.txt); // opens up login.txt (all data is erased so need to rewrite everything)
+	   std::ofstream updateFile("login.txt"); // opens up login.txt (all data is erased so need to rewrite everything)
 	   if(updateFile.is_open())
 	   {
 		while(!data.empty())
