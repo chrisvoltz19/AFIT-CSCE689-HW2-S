@@ -1,10 +1,13 @@
 Questions:
-1) do we need to make whitelist? is a .txt acceptable? do you care where we store it? (question valid for all files)
-2) What code do we need to add to run properly?
-3) Server needs to pass whitelist as well correct?
-4) Can we assume there is enough memory to put whole file into string or do we need to do a temp file approach?
-5) login info stored in: login.txt   (?)
-6) what are we supposed to be putting in for code in hashArgon2
+1) What code do we need to add to run properly?
+2) Server needs to pass whitelist as well correct?
+3) Can we assume there is enough memory to put whole file into string or do we need to do a temp file approach?
+4) login info stored in: login.txt   (?)
+5) what are we supposed to be putting in for code in hashArgon2 
+
+1a?) do we need to make whitelist? is a .txt acceptable? do you care where we store it? (question valid for all files)
+
+
 
 Tasks: 
 - IP Whitelist
@@ -48,3 +51,48 @@ username
 password
 salt
 - if going the tmp file way, use the mv command to rename (with hardcoded string so it is as secure as possible)
+- event logger should be in TCPServer.cpp
+        - make a variable in the .h to hold time 
+
+
+
+read in password 
+create own hash with salt of 16 bytes
+send password in cleartext (kerberos system more secure for homework question)
+
+Code:
+/*******************************************************************************************
+ * eventLogger - Logs specified events in server.log
+ *
+ *    Params:  event     - the event that triggered the logging
+ *             ipAddress - address of whatever caused event
+ *             time      - date and timestamp down to the second of the event 
+ *
+ *    Returns: true if successful, false if not 
+ *
+ *    Throws: pwfile_error if there were unanticipated problems opening the password file for
+ *            writing
+ *
+ *******************************************************************************************/
+bool eventLogger(std::string event, auto ipAddress, auto time)
+{
+        // craft string
+        std::string entry;
+        entry.assign(event);
+        entry.append(ipAddress);
+        entry.append(time);
+        
+        // open a file descriptor to write to
+        std::ofstream logger("server.log"); 
+        if(logger.is_open())
+        {
+                logger << entry << std::endl;
+                logger.close();
+                return true;
+        }
+        else
+        {
+                perror("Failed to open log file");
+		return false; // return false because failed
+        }
+}
