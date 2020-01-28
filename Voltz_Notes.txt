@@ -32,11 +32,16 @@ Tasks:
 	- users that twice failed to enter password (username, IP)
 	- Successful login (username, IP)
 	- disconnect(username, IP)
+        
+        
+
 
 Main files to edit:
+- PasswdMgr.cpp (hashArgon2(); addUser(); writeUser(); readUser(); changePasswd(debug); )
+- TCPConn.cpp (change getMenuChoice(); getUsername(); getPasswd(); changePassword() )
 - TCPClient.cpp (maybe figure out where whitelist confirmation is)
-- TCPServer.cpp (maybe do servers have to be verified against whitelist?)
-- PasswdMgr.cpp
+- TCPServer.cpp (add my serverLog code)
+
 
 
 Hashing process: 
