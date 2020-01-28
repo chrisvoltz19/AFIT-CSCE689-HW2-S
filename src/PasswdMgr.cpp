@@ -189,18 +189,20 @@ bool PasswdMgr::readUser(FileFD &pwfile, std::string &name, std::vector<uint8_t>
 		// read in the line for the hash 
 		else if(counter == 1)
 		{
-			//TODO: cast to correct type necessary?
-			hash.emplace_back(aLine);
+			// conversion technique based on one from stackoverflow.com/questions/7664529/converting-a-string-to-uint-t-array-in-c
+			//TODO: cast to correct type 
+			std::vector<uint8_t> tempVector(aLine.begin(), aLine.end());
+			hash.emplace_back(tempVector[0]);
 			counter++;			
 		}
 		else if(counter == 2)
 		{
-			salt.emplace_back(aLine);
+			//salt.emplace_back(static_cast<uint8_t>(aLine));
 			counter++;
 		}
 	}
 	// close oldFile stream for cleaner code 
-	oldFile.close();
+	readFile.close();
    }
 	else //where it goes if the file fails to open
 	{
