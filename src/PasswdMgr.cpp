@@ -84,7 +84,7 @@ bool PasswdMgr::checkPasswd(const char *name, const char *passwd) {
 
 bool PasswdMgr::changePasswd(const char *name, const char *passwd) {
 
-   //TODO: Insert your insane code here. There is no clean way to modify a specific line of a file
+   //TODO: Insert your insane code here. This currently assumes that the format is <username>\n<password>\n<salt> Line 113
    int edit  = 0; // variable to determine when user is found and edit the next line
    std::vector<std::string> data;
    std::string user = name; // change username to string for c++ comparison
@@ -170,6 +170,45 @@ bool PasswdMgr::changePasswd(const char *name, const char *passwd) {
 bool PasswdMgr::readUser(FileFD &pwfile, std::string &name, std::vector<uint8_t> &hash, std::vector<uint8_t> &salt)
 {
    // Insert your perfect code here!
+   int counter = 0; 
+   // is FileFD a string?
+   // currently open a different file from the one passed in TODO: CHANGE TO HIS pwfile(?)
+   std::ifstream readFile("login.txt", std::ifstream::in); // opens an ifstream to read in information from file 
+   readFile.open("login.txt"); // opens said file 
+   std::string aLine;
+   if(readFile.is_open())
+   {
+	while(std::getline(readFile, aLine) && counter > 2)
+	{
+		//compare the line to username 
+		if(name.compare(aLine) == 0)
+		{
+			// name doesn't need to be read in
+			counter++; 
+		}
+		// read in the line for the hash 
+		else if(counter == 1)
+		{
+			//TODO: cast to correct type necessary?
+			hash.emplace_back(aLine);
+			counter++;			
+		}
+		else if(counter == 2)
+		{
+			salt.emplace_back(aLine);
+			counter++;
+		}
+	}
+	// close oldFile stream for cleaner code 
+	oldFile.close();
+   }
+	else //where it goes if the file fails to open
+	{
+		perror("Failed to open");
+		return false; // return false because failed
+	}
+
+   
 
    return true;
 }
