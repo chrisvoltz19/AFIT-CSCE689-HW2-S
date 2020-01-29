@@ -190,14 +190,16 @@ bool PasswdMgr::readUser(FileFD &pwfile, std::string &name, std::vector<uint8_t>
 		else if(counter == 1)
 		{
 			// conversion technique based on one from stackoverflow.com/questions/7664529/converting-a-string-to-uint-t-array-in-c
-			//TODO: cast to correct type 
-			std::vector<uint8_t> tempVector(aLine.begin(), aLine.end());
-			hash.emplace_back(tempVector[0]);
+			//TODO: check it cast to correct type 
+			std::vector<uint8_t> tempHVector(aLine.begin(), aLine.end());
+			hash.emplace_back(tempHVector[0]);
 			counter++;			
 		}
 		else if(counter == 2)
 		{
 			//salt.emplace_back(static_cast<uint8_t>(aLine));
+			std::vector<uint8_t> tempSVector(aLine.begin(), aLine.end());
+			hash.emplace_back(tempSVector[0]);
 			counter++;
 		}
 	}
@@ -233,8 +235,21 @@ int PasswdMgr::writeUser(FileFD &pwfile, std::string &name, std::vector<uint8_t>
    int results = 0;
 
    // Insert your wild code here!
+   	   std::ofstream addFile("login.txt", std::ios::app); // opens up login.txt in an append mode 
+	   if(addFile.is_open())
+	   {
+		// add the new information to the file 
+		addFile << name << std::endl << hash[0] << std::endl << salt[0] << std::endl;
+		// all information in data has been transferred. Close the stream
+		addFile.close();
+	   }
+	   else
+	   {
+		 perror("Failed to open for writing");
+		 return -1; // return -1 for error
+	   }
 
-   return results; 
+   return sizeof(name) + sizeof(hash[0]) + sizeof(salt[0]); 
 }
 
 /*****************************************************************************************************
@@ -308,6 +323,7 @@ void PasswdMgr::hashArgon2(std::vector<uint8_t> &ret_hash, std::vector<uint8_t> 
 void PasswdMgr::addUser(const char *name, const char *passwd) {
    // Add those users!
    // check file and see if user is already there
+   if (!findUser(name, userhash, salt))
    // if not create salt to be added 
    // open up file to append and put new user at the end
    //
