@@ -126,6 +126,25 @@ void TCPConn::handleConnection() {
 
 void TCPConn::getUsername() {
    // Insert your mind-blowing code here
+   // get user input from client 
+   if(getUserInput(_username))
+   {
+	// compare username input against the data
+        if(_passwordMan().checkUser(_username))
+	{ 
+		// set status to get password b/c valid username
+		_status = s_changepwd;
+	}
+	else
+	{
+		// disconnect due to invalid username
+		_connfd.writeFD("Disconnecting due to invalid username\n");
+      		disconnect();
+	}
+
+   }
+
+
 }
 
 /**********************************************************************************************
@@ -137,7 +156,25 @@ void TCPConn::getUsername() {
  **********************************************************************************************/
 
 void TCPConn::getPasswd() {
-   // Insert your astounding code here
+   // Insert your astounding code here  
+   // variables
+   std::string paswword;
+   // get user input from client for password
+   _connfd.writeFD("Password: "); 
+   if(getUserInput(password))
+   {
+   	while(_pwd_attempts < 2)
+   	{
+		if(_passwordMan.check(_username, password)) // valid username/password combo
+		{ 
+			// set status to get password b/c valid username
+			_status = s_menu;
+			// clear password 
+			password.clear(password.begin(), password.end());
+		}
+				
+   }
+   
 }
 
 /**********************************************************************************************

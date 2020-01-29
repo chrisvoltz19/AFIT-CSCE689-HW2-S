@@ -60,6 +60,7 @@ private:
 
    // added
    PasswdMgr _passwordMan();
+
 };
 
 

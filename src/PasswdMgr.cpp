@@ -309,8 +309,54 @@ bool PasswdMgr::findUser(const char *name, std::vector<uint8_t> &hash, std::vect
  *****************************************************************************************************/
 void PasswdMgr::hashArgon2(std::vector<uint8_t> &ret_hash, std::vector<uint8_t> &ret_salt, 
                            const char *in_passwd, std::vector<uint8_t> *in_salt) {
-   // Hash those passwords!!!!
+   // TODO:Hash those passwords!!!!
+   // create variables
+   uint8_t hash[hashlen]; // to hold the hash
+   uint8_t salt[saltlen]; // hold the salt
+   srand(time(0)); // seed the time for randomness 
 
+   // check to see if the user gave their own salt or if need to generate one 
+   if(in_salt != NULL)
+   {   	
+	if(in_salt->size() != saltlen)
+   	{
+   		throw std::runtime_error("INVALID: The provided salt was not the correct length for a salt.\n");
+	}
+   	// populate salt with passed in salt
+	for(int i = 0; i < saltlen; i++)
+	{
+		salt[i] = (*in_salt)[i];
+	}
+   }
+   else // generate a salt if no salt is passed in
+   {
+ 	for(int i = 0; i < saltlen; i++)
+	{
+		salt[i] = ((rand() % 93) + 33); // generates ascii characters from dec 33 through 126 avoid other for readability
+	}
+   }
+
+   // referenced argon2 documentation for this part 
+   uint32_t t_cost = 2;       // 1-pass computation
+   uint32_t m_cost = (1<<16); // 64 mebibytes memory usage
+   uint32_t parallelism = 1;  // number of threads and lanes 
+
+   // hash using argon2 and put hash in ret_hash and salt in ret_salt
+   argon2i_hash_raw(t_cost, m_cost, parallelism, in_passwd, strlen(in_passwd), salt, saltlen, hash, hashlen); 
+
+   ret_hash.clear(); // clear out the return hash in case something was in there
+   ret_salt.clear(); // clear out the return salt in case something was in there
+   ret_hash.reserve(hashlen); // reserve the hashlen amount of space for the vector (ensure it is together)
+   ret_salt.reserve(saltlen); // reserve the saltlen amount of space for the vector
+   
+   for(int i = 0; i < hashlen; i++)
+   {
+     	ret_hash.emplace_back(hash[i]); 
+   }
+   for(int i = 0; i < saltlen; i++)
+   {
+   	ret_salt.emplace_back(hash[i]); 
+   }
 }
 
 /****************************************************************************************************
@@ -323,7 +369,10 @@ void PasswdMgr::hashArgon2(std::vector<uint8_t> &ret_hash, std::vector<uint8_t> 
 void PasswdMgr::addUser(const char *name, const char *passwd) {
    // Add those users!
    // check file and see if user is already there
-   if (!findUser(name, userhash, salt))
+   if (!checkUser(name))
+   {
+	
+   }
    // if not create salt to be added 
    // open up file to append and put new user at the end
    //
