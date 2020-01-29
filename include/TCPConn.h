@@ -59,7 +59,7 @@ private:
    int _pwd_attempts = 0;
 
    // added
-   PasswdMgr _passwordMan();
+   PasswdMgr _passwordMan;
 
 };
 

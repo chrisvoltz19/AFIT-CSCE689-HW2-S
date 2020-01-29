@@ -14,9 +14,9 @@
 
 
 // The filename/path of the password file
-const char pwdfilename[] = "login.txt";
+const char pwdfilename[] = "passwd";
 
-TCPConn::TCPConn(){ // LogMgr &server_log):_server_log(server_log) {
+TCPConn::TCPConn():_passwordMan(pwdfilename){ // LogMgr &server_log):_server_log(server_log) {
 
 }
 
@@ -130,7 +130,7 @@ void TCPConn::getUsername() {
    if(getUserInput(_username))
    {
 	// compare username input against the data
-        if(_passwordMan().checkUser(_username))
+        if(_passwordMan.checkUser(_username.c_str()))
 	{ 
 		// set status to get password b/c valid username
 		_status = s_changepwd;
@@ -158,21 +158,48 @@ void TCPConn::getUsername() {
 void TCPConn::getPasswd() {
    // Insert your astounding code here  
    // variables
-   std::string paswword;
+   std::string password;
+   int myCounter = 0;
    // get user input from client for password
    _connfd.writeFD("Password: "); 
+   sleep(19); // sleep for 19 seconds for password
    if(getUserInput(password))
    {
    	while(_pwd_attempts < 2)
    	{
-		if(_passwordMan.check(_username, password)) // valid username/password combo
+		if(_passwordMan.checkPasswd(_username.c_str(), password.c_str())) // valid username/password combo
 		{ 
 			// set status to get password b/c valid username
 			_status = s_menu;
 			// clear password 
-			password.clear(password.begin(), password.end());
+			password.clear();
+			// escape loop
+			break;
 		}
-				
+		else
+		{
+			if(_pwd_attempts == 0)	
+			{		
+				// need to get new password
+				_connfd.writeFD("Incorrect Password. Please try again. \nPassword: ");
+				while(!getUserInput(password) && myCounter <10)
+				{
+					// sleep and wait for response
+					sleep(5); //sleep for 5 seconds 
+					myCounter++;
+				}
+			}
+		}
+		// iterate attempts
+		_pwd_attempts++;
+	}
+        _connfd.writeFD("2 incorrect passwords. Now disconnecting\n");		
+   }
+   // user did not enter password
+   else
+   {
+	_connfd.writeFD("You did not enter a password. Now disconnecting\n");
+
    }
    
 }
