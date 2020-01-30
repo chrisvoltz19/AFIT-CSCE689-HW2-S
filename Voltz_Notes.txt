@@ -1,11 +1,8 @@
 Questions:
-1) What code do we need to add to run properly?
-2) Server needs to pass whitelist as well correct?
-3) Can we assume there is enough memory to put whole file into string or do we need to do a temp file approach?
-4) login info stored in: login.txt   (?)
-5) what are we supposed to be putting in for code in hashArgon2 
+-) if i change format from <username>\n<password><salt>\n to <username>\n<password>\n<salt>\n    what code needs changed on your end 
 
 1a?) do we need to make whitelist? is a .txt acceptable? do you care where we store it? (question valid for all files)
+4) login info stored in: login.txt   (?)
 
 
 
@@ -40,21 +37,20 @@ Main files to edit:
 - PasswdMgr.cpp (hashArgon2(); addUser(); writeUser(); readUser(); changePasswd(debug); )
 - TCPConn.cpp (change getMenuChoice(); getUsername(); getPasswd(); changePassword() )
 - TCPClient.cpp (maybe figure out where whitelist confirmation is)
-- TCPServer.cpp (add my serverLog code)
+- TCPServer.cpp (add the logging for server statup)
 
 
 
 Hashing process: 
-1) password is set by command line
+1) password is sent by command line
 2) password is hashed, salted, and (optionally) peppered)
 3) password is stored in random file
 4) user enters password which goes through same process and then is compared to hash
 
 Misc Notes:
 - password file format is (each is stored on a newline):
-username
-password
-salt
+username\n
+<password><salt>\n
 - if going the tmp file way, use the mv command to rename (with hardcoded string so it is as secure as possible)
 - event logger should be in TCPServer.cpp
         - make a variable in the .h to hold time 
