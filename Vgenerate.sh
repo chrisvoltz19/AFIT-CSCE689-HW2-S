@@ -15,8 +15,6 @@ echo "127.0.0.1" >> whitelist
 # delete old login info and set up login.txt
 test -f "src/passwd" && { echo "Removing old login info"; rm -f src/passwd ; }
 test -f "src/passwd" || { echo "Making src/passwd"; touch src/passwd ; }
-echo "admin" >> src/passwd
-echo "75ae0f035ec0c8a6bdf2cfebe35b7c5c39e075972885457998621731476918cAAAAAAAAAAAAAAAA" >> src/passwd
 
 # delete old log and add new one 
 test -f "src/server.log" && { echo "Removing old server log"; rm -f src/server.log ; }

@@ -177,6 +177,9 @@ bool PasswdMgr::readUser(FileFD &pwfile, std::string &name, std::vector<uint8_t>
    int hSize = pwfile.readBytes(hash, hashlen);
    // continue reading that line for the 16 bytes of salt
    int saSize = pwfile.readBytes(salt, saltlen);
+   // read extra until new line to set up for next read
+   uint8_t garbageSize = pwfile.readByte(garbageSize);
+   
    
    return true;	 
 

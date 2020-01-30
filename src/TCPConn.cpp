@@ -169,7 +169,7 @@ void TCPConn::getPasswd() {
    getIPAddrStr(ipaddr_str);
    // get user input from client for password
    _connfd.writeFD("Password: "); 
-   sleep(12); // sleep for 12 seconds for password
+   //sleep(10); // sleep for 10 seconds for password
    if(getUserInput(password))
    {
    	while(_pwd_attempts < 2)
@@ -192,7 +192,7 @@ void TCPConn::getPasswd() {
 				while(!getUserInput(password) && myCounter <10)
 				{
 					// sleep and wait for response
-					sleep(5); //sleep for 5 seconds 
+					//sleep(5); //sleep for 5 seconds 
 					myCounter++;
 				}
 			}

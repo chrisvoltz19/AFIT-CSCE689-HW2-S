@@ -11,6 +11,9 @@
 #include <memory>
 #include <sstream>
 #include "TCPServer.h"
+// added includes
+#include <fstream>
+
 
 TCPServer::TCPServer(){ // :_server_log("server.log", 0) {
 }
@@ -135,22 +138,33 @@ void TCPServer::listenSvr() {
 
 bool TCPServer::checkWhitelist(std::string connIP) 
 {
+	// create the file if it does not exist 
    	int check = open("whitelist", O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
         close(check);
-	FileFD wfile("whitelist");
+	// open an ifstream to read in
+	std::ifstream wFile("whitelist", std::ifstream::in);
+	wFile.open("whitelist");
 	std::string IPChecker;
-	while(wfile.readStr(IPChecker) != 0)
+	if(wFile.is_open())
 	{
-		std::cout << connIP.compare(IPChecker) << std::endl << std::endl;
-		if(connIP.compare(IPChecker) == 0)
+		std::cout << connIP << std::endl;
+		// read in line by line and compare
+		while(std::getline(wFile, IPChecker))//TODO: error is something to do with this line 
 		{
-			_log_conn->logEvent("Client connection on whitelist", connIP);
-			return true;
+			std::cout << "Yay: " << IPChecker << std::endl;
+			//std::cout << connIP.compare(IPChecker) << std::endl << std::endl;
+			if(connIP.compare(IPChecker) == 0)
+			{
+				_log_conn->logEvent("Client connection on whitelist", connIP);
+				return true;
+			}
 		}
-	}
-	_log_conn->logEvent("Client connection not on whitelist", connIP);
-	return false; // not on list		
-   
+		std::cout << IPChecker << std::endl;
+		_log_conn->logEvent("Client connection not on whitelist", connIP);
+		wFile.close();
+		return true; //debugging
+		//return false; // not on list	
+   	}
 }
 
 
