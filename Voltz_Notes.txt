@@ -34,7 +34,7 @@ Tasks:
 
 
 Main files to edit:
-- PasswdMgr.cpp (hashArgon2(); addUser(); writeUser(); readUser(); changePasswd(debug); )
+- PasswdMgr.cpp (hashArgon2(debug); addUser(debug); writeUser(debug); readUser(debug); changePasswd(); )
 - TCPConn.cpp (change getMenuChoice(); getUsername(); getPasswd(); changePassword() )
 - TCPClient.cpp (maybe figure out where whitelist confirmation is)
 - TCPServer.cpp (add the logging for server statup)
@@ -97,3 +97,28 @@ bool eventLogger(std::string event, auto ipAddress, auto time)
 		return false; // return false because failed
         }
 }
+
+
+
+
+
+**************************************************************************************************************************************************************************************
+Current issues
+- Whitelist 
+        - compare is not working properly
+- passmgr changePasswd
+        - needs implemented
+- tcpconn changePasswd
+        - needs implemented
+- Argon2
+        - suspect something wrong with a hash/salt (can't login)
+
+
+
+
+
+
+
+
+
+
