@@ -6,11 +6,17 @@
 #include <iostream>
 #include "TCPConn.h"
 #include "strfuncts.h"
+// added includes 
+#include <time.h>
+#include <ctime>
+#include <chrono>
+#include <fstream>
+
 
 // The filename/path of the password file
 const char pwdfilename[] = "passwd";
 
-TCPConn::TCPConn(){ // LogMgr &server_log):_server_log(server_log) {
+TCPConn::TCPConn():_passwordMan(pwdfilename){ // LogMgr &server_log):_server_log(server_log) {
 
 }
 
@@ -120,6 +126,25 @@ void TCPConn::handleConnection() {
 
 void TCPConn::getUsername() {
    // Insert your mind-blowing code here
+   // get user input from client 
+   if(getUserInput(_username))
+   {
+	// compare username input against the data
+        if(_passwordMan.checkUser(_username.c_str()))
+	{ 
+		// set status to get password b/c valid username
+		_status = s_changepwd;
+	}
+	else
+	{
+		// disconnect due to invalid username
+		_connfd.writeFD("Disconnecting due to invalid username\n");
+      		disconnect();
+	}
+
+   }
+
+
 }
 
 /**********************************************************************************************
@@ -131,7 +156,52 @@ void TCPConn::getUsername() {
  **********************************************************************************************/
 
 void TCPConn::getPasswd() {
-   // Insert your astounding code here
+   // Insert your astounding code here  
+   // variables
+   std::string password;
+   int myCounter = 0;
+   // get user input from client for password
+   _connfd.writeFD("Password: "); 
+   sleep(19); // sleep for 19 seconds for password
+   if(getUserInput(password))
+   {
+   	while(_pwd_attempts < 2)
+   	{
+		if(_passwordMan.checkPasswd(_username.c_str(), password.c_str())) // valid username/password combo
+		{ 
+			// set status to get password b/c valid username
+			_status = s_menu;
+			// clear password 
+			password.clear();
+			// escape loop
+			break;
+		}
+		else
+		{
+			if(_pwd_attempts == 0)	
+			{		
+				// need to get new password
+				_connfd.writeFD("Incorrect Password. Please try again. \nPassword: ");
+				while(!getUserInput(password) && myCounter <10)
+				{
+					// sleep and wait for response
+					sleep(5); //sleep for 5 seconds 
+					myCounter++;
+				}
+			}
+		}
+		// iterate attempts
+		_pwd_attempts++;
+	}
+        _connfd.writeFD("2 incorrect passwords. Now disconnecting\n");		
+   }
+   // user did not enter password
+   else
+   {
+	_connfd.writeFD("You did not enter a password. Now disconnecting\n");
+
+   }
+   
 }
 
 /**********************************************************************************************
@@ -201,11 +271,11 @@ void TCPConn::getMenuChoice() {
    // Don't be lazy and use my outputs--make your own!
    std::string msg;
    if (cmd.compare("hello") == 0) {
-      _connfd.writeFD("Hello back!\n");
+      _connfd.writeFD("Hello there!\n");
    } else if (cmd.compare("menu") == 0) {
       sendMenu();
    } else if (cmd.compare("exit") == 0) {
-      _connfd.writeFD("Disconnecting...goodbye!\n");
+      _connfd.writeFD("Disconnecting...thank you for coming!\n");
       disconnect();
    } else if (cmd.compare("passwd") == 0) {
       _connfd.writeFD("New Password: ");
@@ -286,3 +356,43 @@ void TCPConn::getIPAddrStr(std::string &buf) {
    return _connfd.getIPAddrStr(buf);
 }
 
+
+/*******************************************************************************************
+ * eventLogger - Logs specified events in server.log
+ *
+ *    Params:  event     - the event that triggered the logging
+ *             ipAddress - address of whatever caused event
+ *             time      - date and timestamp down to the second of the event 
+ *
+ *    Returns: true if successful, false if not 
+ *
+ *    Throws: pwfile_error if there were unanticipated problems opening the password file for
+ *            writing
+ *
+ *******************************************************************************************/
+bool TCPConn::logEvent(std::string event, std::string ipAddress)
+{
+	// time code based on code found at stackoverflow.com/questions997946/how-to-get-current-time-and-date-in-c
+	// get the time 
+	auto currTime = std::chrono::system_clock::now();
+	std::time_t eventTime = std::chrono::system_clock::to_time_t(currTime);
+        // craft string
+        std::string entry;
+        entry.assign(event);
+        entry.append(ipAddress);
+        entry.append(std::ctime(&eventTime));
+        
+        // open a file descriptor to write to
+        std::ofstream logger("server.log"); 
+        if(logger.is_open())
+        {
+                logger << entry << std::endl;
+                logger.close();
+                return true;
+        }
+        else
+        {
+                perror("Failed to open log file");
+		return false; // return false because failed
+        }
+}
