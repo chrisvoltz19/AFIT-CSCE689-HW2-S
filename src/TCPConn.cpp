@@ -11,6 +11,7 @@
 #include <ctime>
 #include <chrono>
 #include <fstream>
+#include <fcntl.h>
 
 
 // The filename/path of the password file
@@ -370,7 +371,7 @@ void TCPConn::getIPAddrStr(std::string &buf) {
  *            writing
  *
  *******************************************************************************************/
-bool TCPConn::logEvent(std::string event, std::string ipAddress)
+bool TCPConn::logEvent(std::string event, std::string ipAddress, std::string userName)
 {
 	// time code based on code found at stackoverflow.com/questions997946/how-to-get-current-time-and-date-in-c
 	// get the time 
@@ -378,21 +379,25 @@ bool TCPConn::logEvent(std::string event, std::string ipAddress)
 	std::time_t eventTime = std::chrono::system_clock::to_time_t(currTime);
         // craft string
         std::string entry;
-        entry.assign(event);
+        entry.assign("Event:");
+	entry.append(event);
+	if(!userName.empty())
+	{
+		entry.append(" Username: ");
+		entry.append(userName); 
+	}
+	entry.append(" IP Address:");
         entry.append(ipAddress);
+	entry.append(" ");
         entry.append(std::ctime(&eventTime));
+	entry.append("\n");
+    	const char *cEntry = entry.c_str();
         
         // open a file descriptor to write to
-        std::ofstream logger("server.log"); 
-        if(logger.is_open())
-        {
-                logger << entry << std::endl;
-                logger.close();
-                return true;
-        }
-        else
-        {
-                perror("Failed to open log file");
-		return false; // return false because failed
-        }
+	int logger = open("server.log", O_WRONLY | O_APPEND | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+	int amount = write(logger, cEntry, entry.length());
+	//std::cout << amount << strerror(errno) << std::endl;
+        close(logger);
+        return true;
+
 }

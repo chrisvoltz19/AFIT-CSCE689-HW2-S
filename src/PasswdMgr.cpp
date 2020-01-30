@@ -98,8 +98,8 @@ bool PasswdMgr::changePasswd(const char *name, const char *passwd) {
    else
    {
 	   // read in each line of the password file, adding each to string (file I/O is expensive)
-	   std::ifstream oldFile("login.txt", std::ifstream::in);
-	   oldFile.open("login.txt");
+	   std::ifstream oldFile(_pwd_file, std::ifstream::in);
+	   oldFile.open(_pwd_file);
 	   std::string aLine;
 	   if(oldFile.is_open())
 	   {
@@ -127,7 +127,7 @@ bool PasswdMgr::changePasswd(const char *name, const char *passwd) {
 		return false; // return false because failed
 	   }
 	   // now to write back to file
-	   std::ofstream updateFile("login.txt"); // opens up login.txt (all data is erased so need to rewrite everything)
+	   std::ofstream updateFile(_pwd_file); // opens up file to write to (all data is erased so need to rewrite everything)
 	   if(updateFile.is_open())
 	   {
 		while(!data.empty())
@@ -173,8 +173,8 @@ bool PasswdMgr::readUser(FileFD &pwfile, std::string &name, std::vector<uint8_t>
    int counter = 0; 
    // is FileFD a string?
    // currently open a different file from the one passed in TODO: CHANGE TO HIS pwfile(?)
-   std::ifstream readFile("login.txt", std::ifstream::in); // opens an ifstream to read in information from file 
-   readFile.open("login.txt"); // opens said file 
+   std::ifstream readFile(_pwd_file, std::ifstream::in); // opens an ifstream to read in information from file 
+   readFile.open(_pwd_file); // opens said file 
    std::string aLine;
    if(readFile.is_open())
    {
@@ -235,7 +235,7 @@ int PasswdMgr::writeUser(FileFD &pwfile, std::string &name, std::vector<uint8_t>
    int results = 0;
 
    // Insert your wild code here!
-   	   std::ofstream addFile("login.txt", std::ios::app); // opens up login.txt in an append mode 
+   	   std::ofstream addFile(_pwd_file, std::ios::app); // opens up file to write to in an append mode 
 	   if(addFile.is_open())
 	   {
 		// add the new information to the file 

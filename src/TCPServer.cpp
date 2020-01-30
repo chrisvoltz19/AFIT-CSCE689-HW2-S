@@ -32,6 +32,7 @@ void TCPServer::bindSvr(const char *ip_addr, short unsigned int port) {
    struct sockaddr_in servaddr;
 
    // _server_log.writeLog("Server started.");
+   _log_conn->logEvent("Server started", "127.0.0.1");
 
    // Set the socket to nonblocking
    _sockfd.setNonBlocking();
@@ -69,6 +70,7 @@ void TCPServer::listenSvr() {
          TCPConn *new_conn = new TCPConn();
          if (!new_conn->accept(_sockfd)) {
             // _server_log.strerrLog("Data received on socket but failed to accept.");
+	    _log_conn->logEvent("Data received on socket but failed to accept.", "127.0.0.1");
             continue;
          }
          std::cout << "***Got a connection***\n";
@@ -93,6 +95,9 @@ void TCPServer::listenSvr() {
          // If the user lost connection
          if (!(*tptr)->isConnected()) {
             // Log it
+	    std::string IP;
+	    (*tptr)->getIPAddrStr(IP);
+	    _log_conn->logEvent("Client Disconnected", IP, (*tptr)->getUsernameStr());
 
             // Remove them from the connect list
             tptr = _connlist.erase(tptr);
