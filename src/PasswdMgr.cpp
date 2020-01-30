@@ -91,8 +91,8 @@ bool PasswdMgr::changePasswd(const char *name, const char *passwd) {
 
    //TODO: Insert your insane code here.
    bool changed = false;
-   uint8_t hash[hashlen]; // to hold the hash
-   uint8_t salt[saltlen]; // hold the salt
+   std::vector<uint8_t> hash; // hash derived from the parameter passwd
+   std::vector<uint8_t> salt;
    
 
    // checks if the user is in the database and if it is, checks the password, (0 trust)
