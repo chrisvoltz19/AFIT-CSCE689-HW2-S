@@ -6,6 +6,12 @@ test -f "src/whitelist" && { echo "Removing old whitelist"; rm -f src/whitelist 
 test -f "src/whitelist" || { echo "Making src/whitelist"; touch src/whitelist ; }
 echo "127.0.0.1" >> src/whitelist
 
+# delete and then setup whitelist
+test -f "whitelist" && { echo "Removing old whitelist"; rm -f whitelist ; }
+test -f "whitelist" || { echo "Making whitelist"; touch whitelist ; }
+echo "127.0.0.1" >> whitelist
+
+
 # delete old login info and set up login.txt
 test -f "src/passwd" && { echo "Removing old login info"; rm -f src/passwd ; }
 test -f "src/passwd" || { echo "Making src/passwd"; touch src/passwd ; }

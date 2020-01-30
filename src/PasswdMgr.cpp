@@ -10,12 +10,15 @@
 #include "strfuncts.h"
 // My includes
 #include <fstream>
+#include <fcntl.h>
 
 const int hashlen = 32;
 const int saltlen = 16;
 
 PasswdMgr::PasswdMgr(const char *pwd_file):_pwd_file(pwd_file) {
-
+   // create file if not already there
+   int myFile = open(pwd_file, O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+   close(myFile);
 }
 
 
@@ -34,6 +37,8 @@ bool PasswdMgr::checkUser(const char *name) {
    std::vector<uint8_t> passwd, salt;
 
    bool result = findUser(name, passwd, salt);
+  
+   //std::cout << "Checking user" << std::endl; 
 
    return result;
      
@@ -84,65 +89,57 @@ bool PasswdMgr::checkPasswd(const char *name, const char *passwd) {
 
 bool PasswdMgr::changePasswd(const char *name, const char *passwd) {
 
-   //TODO: Insert your insane code here. This currently assumes that the format is <username>\n<password>\n<salt> Line 113
-   int edit  = 0; // variable to determine when user is found and edit the next line
-   std::vector<std::string> data;
-   std::string user = name; // change username to string for c++ comparison
+   //TODO: Insert your insane code here.
+   bool changed = false;
+   uint8_t hash[hashlen]; // to hold the hash
+   uint8_t salt[saltlen]; // hold the salt
+   
 
    // checks if the user is in the database and if it is, checks the password, (0 trust)
-   if(!checkPasswd(name, passwd)) // user not found/invalide password
+   if(!checkUser(name)) // user not found
    {
 	std::cout << "Invalid username/password to change" << std::endl;
 	return false;
    }
    else
    {
-	   // read in each line of the password file, adding each to string (file I/O is expensive)
-	   std::ifstream oldFile(_pwd_file, std::ifstream::in);
-	   oldFile.open(_pwd_file);
-	   std::string aLine;
-	   if(oldFile.is_open())
-	   {
-		while(std::getline(oldFile, aLine))
+	// open password file to read in things
+	FileFD pwfile(_pwd_file.c_str());
+	if (!pwfile.openFile(FileFD::readfd))
+	{
+     		throw pwfile_error("Could not open passwd file for reading");
+	}
+	// open a temp value to write to
+	int check = open("p", O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+        close(check);
+	FileFD wfile("tmppasswd");
+	if (!wfile.openFile(FileFD::writefd))
+	{
+     		throw pwfile_error("Could not open passwd file for writing");
+	}	
+	bool eof = false;
+        while (!eof) 
+	{
+      		std::string uname;
+
+     		if (!readUser(pwfile, uname, hash, salt)) 
 		{
-			//compare the line to username 
-			if(user.compare(aLine) == 0)
-			{
-				edit = 1; 
-			}
-			else if(edit == 1) // this is the line that needs to be overwritten
-			{
-				edit == 0; 
-				aLine.assign(passwd); // overwrites the old line (does a '\n' needs to be added?)
-			}
-			// add the line to data to be written to the file later
-			data.emplace_back(aLine); 
-		}
-		// close oldFile stream for cleaner code 
-		oldFile.close();
-	   }
-	   else //where it goes if the file fails to open
-	   {
-		perror("Failed to open");
-		return false; // return false because failed
-	   }
-	   // now to write back to file
-	   std::ofstream updateFile(_pwd_file); // opens up file to write to (all data is erased so need to rewrite everything)
-	   if(updateFile.is_open())
-	   {
-		while(!data.empty())
+         		eof = true;
+         		continue;
+      		}
+      		if (uname.compare(name)) // found the entry to change
 		{
-			updateFile << data.front(); // << std::endl; <- is the new line needed?
-			data.erase(data.begin()); // removes the first element
-		}
-		// all information in data has been transferred. Close the stream
-		updateFile.close();
-	   }
-	   else
-	   {
-		 perror("Failed to open for writing");
-		 return false; // return false because failed
-	   }
+			hashArgon2(hash, salt, passwd, &salt);
+         		changed = true;
+      		}
+		// write information to temp file 
+		writeUser(wfile, uname, hash, salt);
+		
+   	}
+	// rename temp file to original file
+	int re = rename("tmppasswd", _pwd_file.c_str());
+
+
 	   
 	   // when username is found, read in the next line (password line) and edit it to new password
 	   // read through the rest of the file and add it to string
@@ -170,51 +167,19 @@ bool PasswdMgr::changePasswd(const char *name, const char *passwd) {
 bool PasswdMgr::readUser(FileFD &pwfile, std::string &name, std::vector<uint8_t> &hash, std::vector<uint8_t> &salt)
 {
    // Insert your perfect code here!
-   int counter = 0; 
-   // is FileFD a string?
-   // currently open a different file from the one passed in TODO: CHANGE TO HIS pwfile(?)
-   std::ifstream readFile(_pwd_file, std::ifstream::in); // opens an ifstream to read in information from file 
-   readFile.open(_pwd_file); // opens said file 
-   std::string aLine;
-   if(readFile.is_open())
+   // take first line and read it into the &name
+   ssize_t nSize = pwfile.readStr(name);
+   if(nSize == 0)
    {
-	while(std::getline(readFile, aLine) && counter > 2)
-	{
-		//compare the line to username 
-		if(name.compare(aLine) == 0)
-		{
-			// name doesn't need to be read in
-			counter++; 
-		}
-		// read in the line for the hash 
-		else if(counter == 1)
-		{
-			// conversion technique based on one from stackoverflow.com/questions/7664529/converting-a-string-to-uint-t-array-in-c
-			//TODO: check it cast to correct type 
-			std::vector<uint8_t> tempHVector(aLine.begin(), aLine.end());
-			hash.emplace_back(tempHVector[0]);
-			counter++;			
-		}
-		else if(counter == 2)
-		{
-			//salt.emplace_back(static_cast<uint8_t>(aLine));
-			std::vector<uint8_t> tempSVector(aLine.begin(), aLine.end());
-			hash.emplace_back(tempSVector[0]);
-			counter++;
-		}
-	}
-	// close oldFile stream for cleaner code 
-	readFile.close();
+	return false;
    }
-	else //where it goes if the file fails to open
-	{
-		perror("Failed to open");
-		return false; // return false because failed
-	}
-
+   // take the next line and read 32 bytes for the hash
+   int hSize = pwfile.readBytes(hash, hashlen);
+   // continue reading that line for the 16 bytes of salt
+   int saSize = pwfile.readBytes(salt, saltlen);
    
+   return true;	 
 
-   return true;
 }
 
 /*****************************************************************************************************
@@ -232,24 +197,29 @@ bool PasswdMgr::readUser(FileFD &pwfile, std::string &name, std::vector<uint8_t>
 
 int PasswdMgr::writeUser(FileFD &pwfile, std::string &name, std::vector<uint8_t> &hash, std::vector<uint8_t> &salt)
 {
-   int results = 0;
-
    // Insert your wild code here!
-   	   std::ofstream addFile(_pwd_file, std::ios::app); // opens up file to write to in an append mode 
-	   if(addFile.is_open())
-	   {
-		// add the new information to the file 
-		addFile << name << std::endl << hash[0] << std::endl << salt[0] << std::endl;
-		// all information in data has been transferred. Close the stream
-		addFile.close();
-	   }
-	   else
-	   {
-		 perror("Failed to open for writing");
-		 return -1; // return -1 for error
-	   }
+   int nResult = pwfile.writeFD(name);
+   nResult = pwfile.writeFD("\n"); // add new line after username
+   if(nResult < 0)
+   {
+	 perror("Failed writing name");
+	 return -1; // return -1 for error
+   }
+   int hResult = pwfile.writeBytes(hash); // write the hash
+   if(hResult < 0)
+   {
+	 perror("Failed writing hash");
+	 return -1; // return -1 for error
+   }
+   int sResult = pwfile.writeBytes(salt); // same line right next to hash
+   if(sResult < 0)
+   {
+	 perror("Failed writing salt");
+	 return -1; // return -1 for error
+   }
+   int fResult = pwfile.writeFD("\n"); // go to next line
 
-   return sizeof(name) + sizeof(hash[0]) + sizeof(salt[0]); 
+   return sizeof(name) + sizeof(hash) + sizeof(salt) + 1; 
 }
 
 /*****************************************************************************************************
@@ -280,16 +250,22 @@ bool PasswdMgr::findUser(const char *name, std::vector<uint8_t> &hash, std::vect
    while (!eof) {
       std::string uname;
 
+      //std::cout << "Finding user" << std::endl; 
+
       if (!readUser(pwfile, uname, hash, salt)) {
          eof = true;
          continue;
       }
+
+      //std::cout << "User searched: " << uname << std::endl;
 
       if (!uname.compare(name)) {
          pwfile.closeFD();
          return true;
       }
    }
+
+   //std::cout << "Found user: " << name << std::endl; 
 
    hash.clear();
    salt.clear();
@@ -332,7 +308,7 @@ void PasswdMgr::hashArgon2(std::vector<uint8_t> &ret_hash, std::vector<uint8_t> 
    {
  	for(int i = 0; i < saltlen; i++)
 	{
-		salt[i] = ((rand() % 93) + 33); // generates ascii characters from dec 33 through 126 avoid other for readability
+		salt[i] = ((rand() % 93) + 33); // generates ascii characters from dec 33 through 126; avoids others for readability
 	}
    }
 
@@ -371,7 +347,25 @@ void PasswdMgr::addUser(const char *name, const char *passwd) {
    // check file and see if user is already there
    if (!checkUser(name))
    {
-	
+	// variables
+   	FileFD pwfile(_pwd_file.c_str());
+
+	if (!pwfile.openFile(FileFD::appendfd))
+	{
+     		throw pwfile_error("Could not open passwd file for writing");
+	}
+        std::string newName(name); 
+   	std::vector<uint8_t> passhash; // hash derived from the parameter passwd
+   	std::vector<uint8_t> salt;
+        // populate hash and salt
+   	hashArgon2(passhash, salt, passwd);
+        // write new user to file
+	writeUser(pwfile, newName, passhash, salt);
+        
+   }
+   else
+   {
+     	throw pwfile_error("User already exists");
    }
    // if not create salt to be added 
    // open up file to append and put new user at the end

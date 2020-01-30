@@ -18,6 +18,9 @@ public:
    void listenSvr();
    void shutdown();
 
+   // added 
+   bool checkWhitelist(std::string connIP);
+
 private:
    // Class to manage the server socket
    SocketFD _sockfd;

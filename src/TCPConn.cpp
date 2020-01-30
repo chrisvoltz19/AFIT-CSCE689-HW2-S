@@ -127,19 +127,23 @@ void TCPConn::handleConnection() {
 
 void TCPConn::getUsername() {
    // Insert your mind-blowing code here
+   std::string ipaddr_str;
+   getIPAddrStr(ipaddr_str);
    // get user input from client 
    if(getUserInput(_username))
    {
 	// compare username input against the data
         if(_passwordMan.checkUser(_username.c_str()))
 	{ 
+		logEvent("Valid username connecting", ipaddr_str, getUsernameStr());
 		// set status to get password b/c valid username
-		_status = s_changepwd;
+		_status = s_passwd;
 	}
 	else
 	{
 		// disconnect due to invalid username
 		_connfd.writeFD("Disconnecting due to invalid username\n");
+		logEvent("Invalid username attempt", ipaddr_str, getUsernameStr());
       		disconnect();
 	}
 
@@ -161,9 +165,11 @@ void TCPConn::getPasswd() {
    // variables
    std::string password;
    int myCounter = 0;
+   std::string ipaddr_str;
+   getIPAddrStr(ipaddr_str);
    // get user input from client for password
    _connfd.writeFD("Password: "); 
-   sleep(19); // sleep for 19 seconds for password
+   sleep(12); // sleep for 12 seconds for password
    if(getUserInput(password))
    {
    	while(_pwd_attempts < 2)
@@ -194,12 +200,23 @@ void TCPConn::getPasswd() {
 		// iterate attempts
 		_pwd_attempts++;
 	}
-        _connfd.writeFD("2 incorrect passwords. Now disconnecting\n");		
+	if(_pwd_attempts == 2)
+	{
+		logEvent("2 Incorrect Password attempts", ipaddr_str, getUsernameStr());
+        	_connfd.writeFD("2 incorrect passwords. Now disconnecting\n");
+		disconnect();
+	}
+	else
+	{
+		logEvent("Valid Login", ipaddr_str, getUsernameStr());
+	}		
    }
    // user did not enter password
    else
    {
+	logEvent("No password entered", ipaddr_str, getUsernameStr());
 	_connfd.writeFD("You did not enter a password. Now disconnecting\n");
+	disconnect();
 
    }
    
@@ -216,6 +233,45 @@ void TCPConn::getPasswd() {
 
 void TCPConn::changePassword() {
    // Insert your amazing code here
+   if(_status == s_changepwd)
+   {
+	// get user input from client for desired new password
+	_connfd.writeFD("Please enter desired new password: "); 
+	sleep(12); // sleep for 12 seconds for password
+	if(!getUserInput(_newpwd))
+   	{
+		_connfd.writeFD("You did not enter a password. Returning to menu\n");	
+		_status = s_menu;
+	}
+	else
+	{
+		_status = s_confirmpwd;
+	}
+   }
+   else
+   {
+	// confirm new password
+	std::string confirmer;
+	_connfd.writeFD("Please re-type desired new password: "); 
+	sleep(12); // sleep for 12 seconds for password
+	if(!getUserInput(confirmer))
+   	{
+		_connfd.writeFD("You did not enter a password. Returning to menu\n");	
+	}
+	else if(confirmer.compare(_newpwd) == 0)
+	{
+		// actually write new password
+		_passwordMan.changePasswd(_username.c_str(), _newpwd.c_str());
+		_connfd.writeFD("Successfully created new password\n");	
+	}
+	else
+	{
+		_connfd.writeFD("Passwords did not match. No change made to password.\n");	
+	}
+	// take user back to menu
+	_status = s_menu;
+   }
+   
 }
 
 
@@ -282,20 +338,16 @@ void TCPConn::getMenuChoice() {
       _connfd.writeFD("New Password: ");
       _status = s_changepwd;
    } else if (cmd.compare("1") == 0) {
-      msg += "You want a prediction about the weather? You're asking the wrong Phil.\n";
-      msg += "I'm going to give you a prediction about this winter. It's going to be\n";
-      msg += "cold, it's going to be dark and it's going to last you for the rest of\n";
-      msg += "your lives!\n";
+      msg += "Study Hard and Don't Procrastinate.\n";
       _connfd.writeFD(msg);
    } else if (cmd.compare("2") == 0) {
-      _connfd.writeFD("42\n");
+      _connfd.writeFD("The longest wedding veil was the same length as 63.5 football fields\n"); // source bestlifeonline.com/random-fun-facts
    } else if (cmd.compare("3") == 0) {
-      _connfd.writeFD("That seems like a terrible idea.\n");
+      _connfd.writeFD("Have a positive impact on what is in front of you\n");
    } else if (cmd.compare("4") == 0) {
-
+      _connfd.writeFD("How do you make friends with a squirrel\n");
    } else if (cmd.compare("5") == 0) {
-      _connfd.writeFD("I'm singing, I'm in a computer and I'm siiiingiiiing! I'm in a\n");
-      _connfd.writeFD("computer and I'm siiiiiiinnnggiiinnggg!\n");
+      _connfd.writeFD("Climb up a tree and act like a nut\n");
    } else {
       msg = "Unrecognized command: ";
       msg += cmd;
@@ -315,11 +367,11 @@ void TCPConn::sendMenu() {
 
    // Make this your own!
    menustr += "Available choices: \n";
-   menustr += "  1). Provide weather report.\n";
-   menustr += "  2). Learn the secret of the universe.\n";
-   menustr += "  3). Play global thermonuclear war\n";
-   menustr += "  4). Do nothing.\n";
-   menustr += "  5). Sing. Sing a song. Make it simple, to last the whole day long.\n\n";
+   menustr += "  1). AFIT Study Tips\n";
+   menustr += "  2). Learn a fact \n";
+   menustr += "  3). Save the world advice\n";
+   menustr += "  4). Get joke\n";
+   menustr += "  5). Get joke answer\n";
    menustr += "Other commands: \n";
    menustr += "  Hello - self-explanatory\n";
    menustr += "  Passwd - change your password\n";
@@ -396,6 +448,7 @@ bool TCPConn::logEvent(std::string event, std::string ipAddress, std::string use
         // open a file descriptor to write to
 	int logger = open("server.log", O_WRONLY | O_APPEND | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
 	int amount = write(logger, cEntry, entry.length());
+	//int amount2 = write(logger, "\n", 1);
 	//std::cout << amount << strerror(errno) << std::endl;
         close(logger);
         return true;
