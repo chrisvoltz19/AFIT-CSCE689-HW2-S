@@ -32,6 +32,7 @@ void TCPServer::bindSvr(const char *ip_addr, short unsigned int port) {
    struct sockaddr_in servaddr;
 
    // _server_log.writeLog("Server started.");
+   _log_conn->logEvent("Server started", "127.0.0.1");
 
    // Set the socket to nonblocking
    _sockfd.setNonBlocking();
@@ -69,6 +70,7 @@ void TCPServer::listenSvr() {
          TCPConn *new_conn = new TCPConn();
          if (!new_conn->accept(_sockfd)) {
             // _server_log.strerrLog("Data received on socket but failed to accept.");
+	    _log_conn->logEvent("Data received on socket but failed to accept.", "127.0.0.1");
             continue;
          }
          std::cout << "***Got a connection***\n";
@@ -78,12 +80,17 @@ void TCPServer::listenSvr() {
          // Get their IP Address string to use in logging
          std::string ipaddr_str;
          new_conn->getIPAddrStr(ipaddr_str);
+	 if(!checkWhitelist(ipaddr_str))
+	 {
+		new_conn->disconnect();
+	 }
+	 else
+	 {
+         	new_conn->sendText("Welcome to the CSCE 689 Server!\n");
 
-
-         new_conn->sendText("Welcome to the CSCE 689 Server!\n");
-
-         // Change this later
-         new_conn->startAuthentication();
+         	// Change this later
+         	new_conn->startAuthentication();
+	 }
       }
 
       // Loop through our connections, handling them
@@ -93,6 +100,9 @@ void TCPServer::listenSvr() {
          // If the user lost connection
          if (!(*tptr)->isConnected()) {
             // Log it
+	    std::string IP;
+	    (*tptr)->getIPAddrStr(IP);
+	    _log_conn->logEvent("Client Disconnected", IP, (*tptr)->getUsernameStr());
 
             // Remove them from the connect list
             tptr = _connlist.erase(tptr);
@@ -112,6 +122,34 @@ void TCPServer::listenSvr() {
    } 
 
 
+   
+}
+
+/**********************************************************************************************
+ * checkWhiteList - Check connected IP address to see if it is on whitelist.
+ * 
+ *	Returns: true if on the whitelist and false if not
+ *
+ *    Throws: socket_error for recoverable errors, runtime_error for unrecoverable types
+ **********************************************************************************************/
+
+bool TCPServer::checkWhitelist(std::string connIP) 
+{
+   	int check = open("whitelist", O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+        close(check);
+	FileFD wfile("whitelist");
+	std::string IPChecker;
+	while(wfile.readStr(IPChecker) != 0)
+	{
+		std::cout << connIP.compare(IPChecker) << std::endl << std::endl;
+		if(connIP.compare(IPChecker) == 0)
+		{
+			_log_conn->logEvent("Client connection on whitelist", connIP);
+			return true;
+		}
+	}
+	_log_conn->logEvent("Client connection not on whitelist", connIP);
+	return false; // not on list		
    
 }
 

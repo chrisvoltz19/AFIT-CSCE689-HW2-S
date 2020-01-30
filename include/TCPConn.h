@@ -39,7 +39,8 @@ public:
    const char *getUsernameStr() { return _username.c_str(); };
 
    // added method
-   bool logEvent(std::string event, std::string ipAddress);
+   // I referenced stackoverflow.com/questions/3784114/how-to-pass-optional-arguments-to-a-method-in-c
+   bool logEvent(std::string event, std::string ipAddress, std::string userName = "");
 
 private:
 
