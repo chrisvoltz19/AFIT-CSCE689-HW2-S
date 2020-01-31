@@ -83,7 +83,7 @@ void TCPConn::handleConnection() {
 
    timespec sleeptime;
    sleeptime.tv_sec = 0;
-   sleeptime.tv_nsec = 100000000;
+   sleeptime.tv_nsec = 10000;
 
    try {
       switch (_status) {
@@ -209,6 +209,7 @@ void TCPConn::getPasswd() {
 	else
 	{
 		logEvent("Valid Login", ipaddr_str, getUsernameStr());
+		sendMenu();
 	}		
    }
    // user did not enter password
@@ -236,12 +237,13 @@ void TCPConn::changePassword() {
    if(_status == s_changepwd)
    {
 	// get user input from client for desired new password
-	_connfd.writeFD("Please enter desired new password: "); 
-	sleep(12); // sleep for 12 seconds for password
+	//_connfd.writeFD("Please enter desired new password: "); 
+	//sleep(12); // sleep for 12 seconds for password
 	if(!getUserInput(_newpwd))
    	{
 		_connfd.writeFD("You did not enter a password. Returning to menu\n");	
 		_status = s_menu;
+		sendMenu();
 	}
 	else
 	{
@@ -253,7 +255,7 @@ void TCPConn::changePassword() {
 	// confirm new password
 	std::string confirmer;
 	_connfd.writeFD("Please re-type desired new password: "); 
-	sleep(12); // sleep for 12 seconds for password
+	//sleep(12); // sleep for 12 seconds for password
 	if(!getUserInput(confirmer))
    	{
 		_connfd.writeFD("You did not enter a password. Returning to menu\n");	
@@ -270,6 +272,7 @@ void TCPConn::changePassword() {
 	}
 	// take user back to menu
 	_status = s_menu;
+	sendMenu();
    }
    
 }
@@ -335,7 +338,7 @@ void TCPConn::getMenuChoice() {
       _connfd.writeFD("Disconnecting...thank you for coming!\n");
       disconnect();
    } else if (cmd.compare("passwd") == 0) {
-      _connfd.writeFD("New Password: ");
+      _connfd.writeFD("Please enter desired new password: ");
       _status = s_changepwd;
    } else if (cmd.compare("1") == 0) {
       msg += "Study Hard and Don't Procrastinate.\n";
@@ -373,10 +376,10 @@ void TCPConn::sendMenu() {
    menustr += "  4). Get joke\n";
    menustr += "  5). Get joke answer\n";
    menustr += "Other commands: \n";
-   menustr += "  Hello - self-explanatory\n";
-   menustr += "  Passwd - change your password\n";
-   menustr += "  Menu - display this menu\n";
-   menustr += "  Exit - disconnect.\n\n";
+   menustr += "  hello - self-explanatory\n";
+   menustr += "  passwd - change your password\n";
+   menustr += "  menu - display this menu\n";
+   menustr += "  exit - disconnect.\n\n";
 
    _connfd.writeFD(menustr);
 }

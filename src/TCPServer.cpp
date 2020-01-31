@@ -58,7 +58,7 @@ void TCPServer::listenSvr() {
    bool online = true;
    timespec sleeptime;
    sleeptime.tv_sec = 0;
-   sleeptime.tv_nsec = 100000000;
+   sleeptime.tv_nsec = 10000;
    int num_read = 0;
 
    // Start the server socket listening
@@ -142,16 +142,14 @@ bool TCPServer::checkWhitelist(std::string connIP)
    	int check = open("whitelist", O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
         close(check);
 	// open an ifstream to read in
-	std::ifstream wFile("whitelist", std::ifstream::in);
+	std::ifstream wFile;//("whitelist", std::ifstream::in);
 	wFile.open("whitelist");
 	std::string IPChecker;
 	if(wFile.is_open())
 	{
-		std::cout << connIP << std::endl;
 		// read in line by line and compare
-		while(std::getline(wFile, IPChecker))//TODO: error is something to do with this line 
+		while(std::getline(wFile, IPChecker))
 		{
-			std::cout << "Yay: " << IPChecker << std::endl;
 			//std::cout << connIP.compare(IPChecker) << std::endl << std::endl;
 			if(connIP.compare(IPChecker) == 0)
 			{
@@ -162,9 +160,8 @@ bool TCPServer::checkWhitelist(std::string connIP)
 		std::cout << IPChecker << std::endl;
 		_log_conn->logEvent("Client connection not on whitelist", connIP);
 		wFile.close();
-		return true; //debugging
-		//return false; // not on list	
    	}
+	return false; // not on list	
 }
 
 

@@ -110,12 +110,12 @@ bool PasswdMgr::changePasswd(const char *name, const char *passwd) {
      		throw pwfile_error("Could not open passwd file for reading");
 	}
 	// open a temp value to write to
-	int check = open("p", O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+	int check = open("tmppasswd", O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
         close(check);
 	FileFD wfile("tmppasswd");
 	if (!wfile.openFile(FileFD::writefd))
 	{
-     		throw pwfile_error("Could not open passwd file for writing");
+     		throw pwfile_error("Could not open temp passwd file for writing");
 	}	
 	bool eof = false;
         while (!eof) 
@@ -127,7 +127,7 @@ bool PasswdMgr::changePasswd(const char *name, const char *passwd) {
          		eof = true;
          		continue;
       		}
-      		if (uname.compare(name)) // found the entry to change
+      		if (changed == false && uname.compare(name) == 0) // found the entry to change
 		{
 			hashArgon2(hash, salt, passwd, &salt);
          		changed = true;
@@ -139,12 +139,6 @@ bool PasswdMgr::changePasswd(const char *name, const char *passwd) {
 	// rename temp file to original file
 	int re = rename("tmppasswd", _pwd_file.c_str());
 
-
-	   
-	   // when username is found, read in the next line (password line) and edit it to new password
-	   // read through the rest of the file and add it to string
-	   // put string back in file 
-	   //
    }
    
    return true;
@@ -334,7 +328,7 @@ void PasswdMgr::hashArgon2(std::vector<uint8_t> &ret_hash, std::vector<uint8_t> 
    }
    for(int i = 0; i < saltlen; i++)
    {
-   	ret_salt.emplace_back(hash[i]); 
+   	ret_salt.emplace_back(salt[i]); 
    }
 }
 
